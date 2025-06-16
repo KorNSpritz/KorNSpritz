@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timeline World Map</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Custom CSS -->
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        #map {
+            flex: 3;
+            height: 100%;
+        }
+        #sidebar {
+            flex: 1;
+            background: #f4f4f4;
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 1px solid #ccc;
+        }
+        #timeline {
+            margin-top: 20px;
+        }
+        .timeline-event {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            cursor: pointer;
+        }
+        .timeline-event:hover {
+            background: #e0e0e0;
+        }
+        #event-form {
+            margin-bottom: 20px;
+        }
+        #event-form input, #event-form textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 5px;
+        }
+        #event-form button {
+            padding: 10px;
+            background: #0078A8;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        #event-form button:hover {
+            background: #005f80;
+        }
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            #map {
+                height: 50%;
+            }
+            #sidebar {
+                height: 50%;
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Map Container -->
+    <div id="map"></div>
+    <!-- Sidebar with Timeline and Form -->
+    <div id="sidebar">
+        <h2>Timeline</h2>
+        <div id="event-form">
+            <input type="text" id="event-date" placeholder="Date (e.g., 2023-10-15)">
+            <input type="text" id="event-lat" placeholder="Latitude (e.g., 51.505)">
+            <input type="text" id="event-lon" placeholder="Longitude (e.g., -0.09)">
+            <textarea id="event-desc" placeholder="Event Description"></textarea>
+            <button onclick="addEvent()">Add Event</button>
+        </div>
+        <div id="timeline"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize the map
+        const map = L.map('map').setView([0, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // Array to store events
+        let events = [];
+
+        // Function to add an event
+        function addEvent() {
+            const date = document.getElementById('event-date').value;
+            const lat = parseFloat(document.getElementById('event-lat').value);
+            const lon = parseFloat(document.getElementById('event-lon').value);
+            const desc = document.getElementById('event-desc').value;
+
+            if (!date || isNaN(lat) || isNaN(lon) || !desc) {
+                alert('Please fill in all fields with valid data.');
+                return;
+            }
+
+            // Create event object
+            const event = { date, lat, lon, desc };
+            events.push(event);
+
+            // Sort events by date
+            events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // Add marker to map
+            const marker = L.marker([lat, lon]).addTo(map)
+                .bindPopup(`<b>${date}</b><br>${desc}`);
+
+            // Add event to timeline
+            updateTimeline();
+
+            // Clear form
+            document.getElementById('event-form').reset();
+
+            // Zoom to new marker
+            map.setView([lat, lon], 5);
+        }
+
+        // Function to update timeline display
+        function updateTimeline() {
+            const timeline = document.getElementById('timeline');
+            timeline.innerHTML = '';
+            events.forEach((event, index) => {
+                const eventDiv = document.createElement('div');
+                eventDiv.className = 'timeline-event';
+                eventDiv.innerHTML = `<b>${event.date}</b><br>${event.desc}`;
+                eventDiv.onclick = () => {
+                    map.setView([event.lat, event.lon], 5);
+                    L.marker([event.lat, event.lon]).addTo(map)
+                        .bindPopup(`<b>${event.date}</b><br>${event.desc}`)
+                        .openPopup();
+                };
+                timeline.appendChild(eventDiv);
+            });
+        }
+    </script>
+</body>
+</html>
